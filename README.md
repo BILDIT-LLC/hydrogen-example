@@ -126,3 +126,9 @@ No `next/*` imports. Next-authored CMS banners require Hydrogen-specific templat
 4. CSP: `bilditCspDirectives` + `allowBilditIframeEmbedding()`
 5. Bundled `/scripts/admin.js` in `public/`
 6. Dev server port matches CMS preview URL
+
+## Library documentation
+
+- Package: [@bildit-platform/hydrogen](https://www.npmjs.com/package/@bildit-platform/hydrogen)
+- React core: [@bildit-platform/react-core](https://www.npmjs.com/package/@bildit-platform/react-core)
+- BILDIT docs: [docs.bildit.co](https://docs.bildit.co/docs/getting-started)
