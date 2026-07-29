@@ -1,7 +1,7 @@
 import {
   ensureHostReactGlobals,
   registerCmsDependencies,
-} from '@bildit-platform/hydrogen';
+} from '@bildit-platform/hydrogen/client';
 import {HydratedRouter} from 'react-router/dom';
 import {startTransition, StrictMode} from 'react';
 import {hydrateRoot} from 'react-dom/client';
@@ -12,6 +12,7 @@ registerCmsDependencies();
 
 if (!window.location.origin.includes('webcache.googleusercontent.com')) {
   startTransition(() => {
+    // Extract nonce from existing script tags
     const existingNonce = document.querySelector('script[nonce]')?.nonce;
 
     hydrateRoot(
