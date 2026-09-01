@@ -6,6 +6,7 @@ import {
   allowBilditIframeEmbedding,
   bilditCspDirectives,
 } from '@bildit-platform/hydrogen/server';
+import {injectBilditVerifyScript} from '~/lib/bilditVerifyScript';
 
 /**
  * @param {Request} request
@@ -27,6 +28,28 @@ export default async function handleRequest(
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
     ...bilditCspDirectives,
+    // BWC-5023: Live Editor compiles templates with a blob worker + SWC WASM
+    workerSrc: [
+      "'self'",
+      'blob:',
+      'https://bildit-cdn.bilditon.com',
+      'https://bildit-staging-cdn.bilditon.com',
+    ],
+    scriptSrc: [
+      ...(bilditCspDirectives.scriptSrc || []),
+      'blob:',
+      'https://bildit-cdn.bilditon.com',
+      'https://bildit-staging-cdn.bilditon.com',
+      'https://unpkg.com',
+      'https://cdn.jsdelivr.net',
+    ],
+    connectSrc: [
+      ...(bilditCspDirectives.connectSrc || []),
+      'https://bildit-cdn.bilditon.com',
+      'https://bildit-staging-cdn.bilditon.com',
+      'https://unpkg.com',
+      'https://cdn.jsdelivr.net',
+    ],
   });
 
   const header = allowBilditIframeEmbedding(baseHeader);
@@ -53,10 +76,21 @@ export default async function handleRequest(
     await body.allReady;
   }
 
+  const bilditApiKey = context.env.BILDIT_API_KEY;
+  let responseBody = body;
+
+  if (bilditApiKey) {
+    await body.allReady;
+    responseBody = injectBilditVerifyScript(
+      await new Response(body).text(),
+      bilditApiKey,
+    );
+  }
+
   responseHeaders.set('Content-Type', 'text/html');
   responseHeaders.set('Content-Security-Policy', header);
 
-  return new Response(body, {
+  return new Response(responseBody, {
     headers: responseHeaders,
     status: responseStatusCode,
   });

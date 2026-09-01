@@ -16,10 +16,7 @@ import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
-
-/** Bundled-React admin build for Hydrogen (USE_EXTERNAL_REACT=false). */
-const BILDIT_ADMIN_SCRIPT =
-  'https://bildit-cdn.bilditon.com/cms-client-hydrogen/scripts/admin.js';
+import {withNormalizedBilditEnv} from '~/lib/bilditEnv';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -75,7 +72,10 @@ export async function loader(args) {
   const criticalData = await loadCriticalData(args);
 
   const {storefront, env} = args.context;
-  const banners = await getBannersForRequest(args.request, env);
+  const banners = await getBannersForRequest(
+    args.request,
+    withNormalizedBilditEnv(env),
+  );
 
   return {
     ...deferredData,
@@ -181,7 +181,7 @@ export default function App() {
   }
 
   return (
-    <BilditRoot banners={data.banners ?? []} adminScript={BILDIT_ADMIN_SCRIPT}>
+    <BilditRoot banners={data.banners ?? []}>
       <Analytics.Provider
         cart={data.cart}
         shop={data.shop}
