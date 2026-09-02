@@ -27,6 +27,38 @@ export default async function handleRequest(
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
     ...bilditCspDirectives,
+    // BWC-5023: Live Editor compiles templates with a blob worker + SWC WASM
+    workerSrc: [
+      "'self'",
+      'blob:',
+      'https://bildit-cdn.bilditon.com',
+      'https://bildit-staging-cdn.bilditon.com',
+    ],
+    scriptSrc: [
+      ...(bilditCspDirectives.scriptSrc || []),
+      // 'unsafe-eval' is required for BILDIT Live Editor on any Hydrogen storefront using
+      // CSP (not just local dev): SWC WASM compile (WebAssembly.instantiateStreaming) is
+      // blocked without it. Same pattern the CMS uses in its template preview iframe.
+      "'unsafe-eval'",
+      'blob:',
+      'https://bildit-cdn.bilditon.com',
+      'https://bildit-staging-cdn.bilditon.com',
+      'https://unpkg.com',
+      'https://cdn.jsdelivr.net',
+      ...(import.meta.env.DEV
+        ? ['http://localhost:3333', 'http://127.0.0.1:3333']
+        : []),
+    ],
+    connectSrc: [
+      ...(bilditCspDirectives.connectSrc || []),
+      'https://bildit-cdn.bilditon.com',
+      'https://bildit-staging-cdn.bilditon.com',
+      'https://unpkg.com',
+      'https://cdn.jsdelivr.net',
+      ...(import.meta.env.DEV
+        ? ['http://localhost:3333', 'http://127.0.0.1:3333']
+        : []),
+    ],
   });
 
   const header = allowBilditIframeEmbedding(baseHeader);

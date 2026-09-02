@@ -76,33 +76,47 @@ npm run dev
 
 | | Next.js | Hydrogen |
 |---|---|---|
-| Config file | You build `cmsDependencies.ts` | Package exports `hydrogenDependenciesConfig` |
-| Wired into provider | `extraDependenciesConfig={cmsDependencies}` on `BilditProvider` | Built in as `coreDependenciesConfig` on Hydrogen’s `BilditProvider` |
-| Live Editor | Same modules must be available to the admin script | `registerCmsDependencies()` in `entry.client.jsx` copies the map onto `window.cmsDependencies` |
+| Config file | You build `cmsDependencies.ts` | `app/lib/cmsDependencies.js` + package `hydrogenDependenciesConfig` |
+| Wired into provider | `extraDependenciesConfig={cmsDependencies}` on `BilditProvider` | `hydrogenDependenciesConfig` on Hydrogen’s `BilditProvider`, plus `extraDependenciesConfig` on `BilditRoot` |
+| Live Editor | Same modules must be available to the admin script | `registerHostCmsDependencies()` in `entry.client.jsx` copies **non-React** host modules onto `window.cmsDependencies` |
 
 ### What’s registered by default
 
-`hydrogenDependenciesConfig` includes Hydrogen-native modules only (no `next/*`):
+Storefront interpretation (`hydrogenDependenciesConfig` on `BilditProvider`) includes Hydrogen-native modules:
 
-- `react`, `react/jsx-runtime`, `react/jsx-dev-runtime`
+- `react`, `react/jsx-runtime`, `react/jsx-dev-runtime` (Hydrogen’s React 18 — storefront only)
 - `react-dom`, `react-dom/client`
 - `react-router`
 - `@shopify/hydrogen`
+
+**Do not put host React on `window.cmsDependencies`.** Live Editor `admin.js` is React 19. If Hydrogen’s React 18 overrides it, compiled banners throw [minified React error #525](https://react.dev/errors/525) (“A React Element from an older version of React was rendered”). This is not a missing Tailwind package.
+
+### Tailwind (CSS, not a cmsDependency)
+
+BILDIT banners use Tailwind utility classes. That is **CSS**, not a JS module — do **not** register `tailwindcss` on `window.cmsDependencies`.
+
+- **Host UI:** `app/styles/tailwind.css` + `@tailwindcss/vite` scan storefront source only.
+- **Saved banners:** the CMS scans classes and compiles Tailwind CSS into the banner (`WithTwBase` / `<style data-inject-for="tw">`).
+- **Drafts / Live Editor:** this example also loads the same browser runtime the CMS preview uses, because Vite cannot see class names that exist only in CMS code:
+
+```jsx
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" nonce={nonce}></script>
+```
+
+`cdn.jsdelivr.net` must be allowed in Hydrogen CSP `scriptSrc` (already in `entry.server.jsx`).
 
 ### Reference in this repo
 
 ```jsx
 // app/entry.client.jsx — call BEFORE hydrateRoot
-import {
-  ensureHostReactGlobals,
-  registerCmsDependencies,
-} from '@bildit-platform/hydrogen/client';
+import {ensureHostReactGlobals} from '@bildit-platform/hydrogen/client';
+import {registerHostCmsDependencies} from '~/lib/cmsDependencies';
 
 ensureHostReactGlobals();
-registerCmsDependencies(); // ← registers hydrogenDependenciesConfig
+registerHostCmsDependencies();
 ```
 
-You do **not** need a separate `cmsDependencies.ts` for the defaults. Custom template modules (icon libs, shared UI) should be added the same way as Next — extend the dependency map used by the engine / Live Editor (e.g. merge into `window.cmsDependencies` after `registerCmsDependencies()`, or pass `extraDependenciesConfig` when using `BilditProvider` directly). Banner code must import Hydrogen-native modules (`react-router`, `@shopify/hydrogen`), not `next/*`.
+Add extra JS modules (date-fns, icon libs, shared UI) in `app/lib/cmsDependencies.js` — the same list is passed to `BilditRoot` as `extraDependenciesConfig`. Banner code must import Hydrogen-native modules (`react-router`, `@shopify/hydrogen`), not `next/*`.
 
 ## Visual Editor bridge (Hydrogen vs Next.js)
 
@@ -203,8 +217,9 @@ import {StylePlaceholder} from '@bildit-platform/hydrogen/client';
 
 ### 4. Provider + client bootstrap
 
-- `app/entry.client.jsx` — `ensureHostReactGlobals()` + `registerCmsDependencies()` before hydrate
-- `app/root.jsx` — wrap the app in `<BilditRoot banners={…} adminScript={…}>`
+- `app/entry.client.jsx` — `ensureHostReactGlobals()` + `registerHostCmsDependencies()` before hydrate
+- `app/lib/cmsDependencies.js` — extra JS modules; strips host React from `window.cmsDependencies`
+- `app/root.jsx` — wrap the app in `<BilditRoot banners={…} extraDependenciesConfig={…}>` and load `@tailwindcss/browser`
 - `app/entry.server.jsx` — `bilditCspDirectives` + `allowBilditIframeEmbedding()`
 - `vite.config.js` — SSR `noExternal` for `@bildit-platform/*` packages
 
@@ -220,7 +235,8 @@ http://localhost:3000/?bildit_preview_date=2026-02-15T00:00:00.000Z
 app/
   entry.client.jsx          # React globals + CMS deps
   entry.server.jsx          # CSP + iframe embedding
-  root.jsx                  # getBannersForRequest + BilditRoot
+  lib/cmsDependencies.js    # extra JS modules; omit host React (#525)
+  root.jsx                  # getBannersForRequest + BilditRoot + Tailwind browser
   routes/
     _index.jsx              # Arcade blurb + home slots
     faq.jsx                 # FAQ slot examples
@@ -237,18 +253,20 @@ Hydrogen banners must import **native modules only** — no `next/*`:
 
 | Import | Module |
 |--------|--------|
-| `react` | `react` |
+| `react` | `react` (storefront / BilditProvider — not `window.cmsDependencies`) |
 | `react-router` | `Link`, `useNavigate`, `useLocation`, … |
 | `@shopify/hydrogen` | `Image`, `Link`, `Money`, … |
+| Tailwind classes | CSS via `@tailwindcss/browser` or compiled banner styles — not a JS import |
 
 ## VEE checklist
 
-1. `ensureHostReactGlobals()` + `registerCmsDependencies()` in `entry.client.jsx`
+1. `ensureHostReactGlobals()` + `registerHostCmsDependencies()` in `entry.client.jsx` (no host React on `window.cmsDependencies`)
 2. `BilditRoot` wraps the app (includes `BilditAdminBridge`)
-3. CSP: `bilditCspDirectives` + `allowBilditIframeEmbedding()` in `entry.server.jsx`
-4. Hydrogen bundled admin script (CDN or `public/scripts/admin.js`) — not the Next.js download
-5. `BILDIT_API_KEY` / `BILDIT_API_URL` in `.env` locally and as **Oxygen** env vars in production
-6. Dev server URL/port matches the CMS preview URL
+3. `@tailwindcss/browser` in `root.jsx` so draft Tailwind classes resolve
+4. CSP: `bilditCspDirectives` + `allowBilditIframeEmbedding()` in `entry.server.jsx` (include `cdn.jsdelivr.net`)
+5. Hydrogen bundled admin script (CDN or `public/scripts/admin.js`) — not the Next.js download
+6. `BILDIT_API_KEY` / `BILDIT_API_URL` in `.env` locally and as **Oxygen** env vars in production
+7. Dev server URL/port matches the CMS preview URL
 
 ## Related
 

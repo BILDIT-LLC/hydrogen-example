@@ -1,6 +1,7 @@
 import {Analytics, getShopAnalytics, useNonce} from '@shopify/hydrogen';
 import {BilditRoot} from '@bildit-platform/hydrogen/client';
 import {getBannersForRequest} from '@bildit-platform/hydrogen/server';
+import {extraDependenciesConfig} from '~/lib/cmsDependencies';
 import {
   Outlet,
   useRouteError,
@@ -14,12 +15,10 @@ import {
 import favicon from '~/assets/favicon.svg';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
+import tailwindStyles from '~/styles/tailwind.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
-
-/** Bundled-React admin build for Hydrogen (USE_EXTERNAL_REACT=false). */
-const BILDIT_ADMIN_SCRIPT =
-  'https://bildit-cdn.bilditon.com/cms-client-hydrogen/scripts/admin.js';
+import {withNormalizedBilditEnv} from '~/lib/bilditEnv';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -75,7 +74,10 @@ export async function loader(args) {
   const criticalData = await loadCriticalData(args);
 
   const {storefront, env} = args.context;
-  const banners = await getBannersForRequest(args.request, env);
+  const banners = await getBannersForRequest(
+    args.request,
+    withNormalizedBilditEnv(env),
+  );
 
   return {
     ...deferredData,
@@ -159,7 +161,17 @@ export function Layout({children}) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <link rel="stylesheet" href={resetStyles}></link>
+        <link rel="stylesheet" href={tailwindStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
+        {/*
+          Draft / Live Editor banners use Tailwind utility classes. The CMS
+          preview loads this same browser runtime; saved banners also get
+          scanned CSS compiled in. Do not register tailwindcss as a cmsDependency.
+        */}
+        <script
+          src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"
+          nonce={nonce}
+        ></script>
         <Meta />
         <Links />
       </head>
@@ -181,7 +193,10 @@ export default function App() {
   }
 
   return (
-    <BilditRoot banners={data.banners ?? []} adminScript={BILDIT_ADMIN_SCRIPT}>
+    <BilditRoot
+      banners={data.banners ?? []}
+      extraDependenciesConfig={extraDependenciesConfig}
+    >
       <Analytics.Provider
         cart={data.cart}
         shop={data.shop}

@@ -3,9 +3,10 @@ import {hydrogen} from '@shopify/hydrogen/vite';
 import {oxygen} from '@shopify/mini-oxygen/vite';
 import {reactRouter} from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  plugins: [hydrogen(), oxygen(), reactRouter(), tsconfigPaths()],
+  plugins: [hydrogen(), oxygen(), reactRouter(), tailwindcss(), tsconfigPaths()],
   resolve: {
     dedupe: ['react', 'react-dom', 'react-dom/client'],
   },
@@ -45,6 +46,6 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['.tryhydrogen.dev'],
+    allowedHosts: ['.tryhydrogen.dev', '.trycloudflare.com', '.ngrok-free.app', '.ngrok.io'],
   },
 });
