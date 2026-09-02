@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+
+/**
+ * Scan app source for utility classes (Tailwind v4 content detection).
+ * This does not see CMS banner class names at runtime — drafts still need
+ * `@tailwindcss/browser` in root.jsx (same runtime as the CMS preview).
+ * Do not register `tailwindcss` on window.cmsDependencies.
+ * @see https://tailwindcss.com/docs/detecting-classes-in-source-files
+ */
+@source '../**/*.{js,jsx,ts,tsx}';

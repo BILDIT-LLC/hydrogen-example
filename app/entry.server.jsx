@@ -6,7 +6,6 @@ import {
   allowBilditIframeEmbedding,
   bilditCspDirectives,
 } from '@bildit-platform/hydrogen/server';
-import {injectBilditVerifyScript} from '~/lib/bilditVerifyScript';
 
 /**
  * @param {Request} request
@@ -37,11 +36,18 @@ export default async function handleRequest(
     ],
     scriptSrc: [
       ...(bilditCspDirectives.scriptSrc || []),
+      // 'unsafe-eval' is required for BILDIT Live Editor on any Hydrogen storefront using
+      // CSP (not just local dev): SWC WASM compile (WebAssembly.instantiateStreaming) is
+      // blocked without it. Same pattern the CMS uses in its template preview iframe.
+      "'unsafe-eval'",
       'blob:',
       'https://bildit-cdn.bilditon.com',
       'https://bildit-staging-cdn.bilditon.com',
       'https://unpkg.com',
       'https://cdn.jsdelivr.net',
+      ...(import.meta.env.DEV
+        ? ['http://localhost:3333', 'http://127.0.0.1:3333']
+        : []),
     ],
     connectSrc: [
       ...(bilditCspDirectives.connectSrc || []),
@@ -49,6 +55,9 @@ export default async function handleRequest(
       'https://bildit-staging-cdn.bilditon.com',
       'https://unpkg.com',
       'https://cdn.jsdelivr.net',
+      ...(import.meta.env.DEV
+        ? ['http://localhost:3333', 'http://127.0.0.1:3333']
+        : []),
     ],
   });
 
@@ -76,21 +85,10 @@ export default async function handleRequest(
     await body.allReady;
   }
 
-  const bilditApiKey = context.env.BILDIT_API_KEY;
-  let responseBody = body;
-
-  if (bilditApiKey) {
-    await body.allReady;
-    responseBody = injectBilditVerifyScript(
-      await new Response(body).text(),
-      bilditApiKey,
-    );
-  }
-
   responseHeaders.set('Content-Type', 'text/html');
   responseHeaders.set('Content-Security-Policy', header);
 
-  return new Response(responseBody, {
+  return new Response(body, {
     headers: responseHeaders,
     status: responseStatusCode,
   });
