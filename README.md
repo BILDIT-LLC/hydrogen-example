@@ -23,6 +23,24 @@ cd hydrogen-example
 npm install
 ```
 
+## Before you verify
+
+The VEE **Verify** button looks for `BilditRoot` on the live storefront — not a script tag in `<head>`. Install the adapter and wrap the app **before** you click Verify:
+
+```bash
+yarn add @bildit-platform/hydrogen
+```
+
+```tsx
+import { BilditRoot } from '@bildit-platform/hydrogen/client'
+
+<BilditRoot banners={banners}>
+  {children}
+</BilditRoot>
+```
+
+This example already wraps the storefront in `BilditRoot` in `app/root.jsx`. Set your env vars, run the app, then click **Verify** in the VEE.
+
 ## Environment variables (Hydrogen vs Next.js)
 
 **Same variable names** as Next.js: `BILDIT_API_KEY` and `BILDIT_API_URL`. The difference is **how you set and read them**.
