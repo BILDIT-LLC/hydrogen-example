@@ -38,7 +38,7 @@ export default async function handleRequest(
       ...(bilditCspDirectives.scriptSrc || []),
       // 'unsafe-eval' is required for BILDIT Live Editor on any Hydrogen storefront using
       // CSP (not just local dev): SWC WASM compile (WebAssembly.instantiateStreaming) is
-      // blocked without it. Same pattern the CMS uses in its template preview iframe.
+      // blocked without it. Same pattern the VXE uses in its template preview iframe.
       "'unsafe-eval'",
       'blob:',
       'https://bildit-cdn.bilditon.com',

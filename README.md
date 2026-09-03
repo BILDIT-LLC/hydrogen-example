@@ -1,13 +1,13 @@
 # @bildit-platform/hydrogen Example
 
-Shopify Hydrogen storefront demonstrating **BILDIT CMS** integration with [`@bildit-platform/hydrogen`](https://www.npmjs.com/package/@bildit-platform/hydrogen).
+Shopify Hydrogen storefront demonstrating **BILDIT VXE** integration with [`@bildit-platform/hydrogen`](https://www.npmjs.com/package/@bildit-platform/hydrogen).
 
 This is the Hydrogen counterpart to [`nextjs-example`](../nextjs-example). It shows:
 
 - **`getBannersForRequest`** — server-side banner fetch by path + preview date
 - **`SlotPlaceholder`** — slot rendering with `fallback` and `forceFallback`
-- **`StylePlaceholder`** — CMS-managed CSS injection into `head`
-- **VEE Live Editor** — admin bridge + CSP helpers for iframe embedding
+- **`StylePlaceholder`** — VXE-managed CSS injection into `head`
+- **VXE Live Editor** — admin bridge + CSP helpers for iframe embedding
 
 Uses Shopify’s mock.shop data source by default (no store connection required).
 
@@ -22,6 +22,24 @@ Uses Shopify’s mock.shop data source by default (no store connection required)
 cd hydrogen-example
 npm install
 ```
+
+## Before you verify
+
+The VXE **Verify** button looks for `BilditRoot` on the live storefront — not a script tag in `<head>`. Install the adapter and wrap the app **before** you click Verify:
+
+```bash
+yarn add @bildit-platform/hydrogen
+```
+
+```tsx
+import { BilditRoot } from '@bildit-platform/hydrogen/client'
+
+<BilditRoot banners={banners}>
+  {children}
+</BilditRoot>
+```
+
+This example already wraps the storefront in `BilditRoot` in `app/root.jsx`. Set your env vars, run the app, then click **Verify** in the VXE.
 
 ## Environment variables (Hydrogen vs Next.js)
 
@@ -40,7 +58,7 @@ Edit `.env` (not `.env.local`):
 
 ```bash
 BILDIT_API_KEY=your-api-key
-BILDIT_API_URL=https://your-site.web.app   # CMS instance root (no path)
+BILDIT_API_URL=https://your-site.web.app   # VXE instance root (no path)
 ```
 
 MiniOxygen loads `.env` into the worker `Env` bindings. In loaders, read them through **`context.env`**:
@@ -60,7 +78,7 @@ Set the **same two names** as Oxygen environment variables (Hydrogen storefront 
 | Variable | Required | Description |
 |---|---|---|
 | `BILDIT_API_KEY` | ✅ | API key from Configuration → API Keys |
-| `BILDIT_API_URL` | ✅ | Root URL of your CMS instance (SDK appends `/remote-webbanners_v1_4`) |
+| `BILDIT_API_URL` | ✅ | Root URL of your VXE instance (SDK appends `/remote-webbanners_v1_4`) |
 
 Types for these bindings are declared in `env.d.ts`.
 
@@ -96,8 +114,8 @@ Storefront interpretation (`hydrogenDependenciesConfig` on `BilditProvider`) inc
 BILDIT banners use Tailwind utility classes. That is **CSS**, not a JS module — do **not** register `tailwindcss` on `window.cmsDependencies`.
 
 - **Host UI:** `app/styles/tailwind.css` + `@tailwindcss/vite` scan storefront source only.
-- **Saved banners:** the CMS scans classes and compiles Tailwind CSS into the banner (`WithTwBase` / `<style data-inject-for="tw">`).
-- **Drafts / Live Editor:** this example also loads the same browser runtime the CMS preview uses, because Vite cannot see class names that exist only in CMS code:
+- **Saved banners:** the VXE scans classes and compiles Tailwind CSS into the banner (`WithTwBase` / `<style data-inject-for="tw">`).
+- **Drafts / Live Editor:** this example also loads the same browser runtime the VXE preview uses, because Vite cannot see class names that exist only in VXE code:
 
 ```jsx
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" nonce={nonce}></script>
@@ -124,12 +142,12 @@ Add extra JS modules (date-fns, icon libs, shared UI) in `app/lib/cmsDependencie
 
 | | Next.js | Hydrogen |
 |---|---|---|
-| Script artifact | VEE download: `bildit-cms-script.min.js` | **Bundled-React** admin: `admin.js` (`USE_EXTERNAL_REACT=false`) |
+| Script artifact | VXE download: `bildit-cms-script.min.js` | **Bundled-React** admin: `admin.js` (`USE_EXTERNAL_REACT=false`) |
 | Default hosting | `public/scripts/bildit-cms-script.min.js` | CDN: `https://bildit-cdn.bilditon.com/cms-client-hydrogen/scripts/admin.js` |
 | Bridge | Inline `postMessage` bridge in layout | Exported `BilditAdminBridge` (included by `BilditRoot`) |
 | Optional local file | Required for the Next guide | Optional — override `adminScript` on `BilditRoot` |
 
-Walkthrough (general VEE script concepts):
+Walkthrough (general VXE script concepts):
 
 **[Arcade guide — install the script](https://app.arcade.software/flows/LyUaZaZMwkfwjseVtwaj/view)**
 
@@ -166,11 +184,11 @@ See `public/scripts/README.md`.
 
 ### Oxygen / CSP caveats
 
-1. **CSP is required for Live Editor.** This example spreads `bilditCspDirectives` into Hydrogen’s `createContentSecurityPolicy` and runs `allowBilditIframeEmbedding(header)` so VEE can iframe the storefront (`frame-ancestors` for admin.bildit.co, localhost, `*.web.app`, etc.). Without this, the editor iframe / script load fails silently.
+1. **CSP is required for Live Editor.** This example spreads `bilditCspDirectives` into Hydrogen’s `createContentSecurityPolicy` and runs `allowBilditIframeEmbedding(header)` so VXE can iframe the storefront (`frame-ancestors` for admin.bildit.co, localhost, `*.web.app`, etc.). Without this, the editor iframe / script load fails silently.
 2. **`scriptSrc` / `connectSrc`** must allow `https://bildit-cdn.bilditon.com` (and your Functions host if not already covered). Sentry ingest hosts are included for admin error reporting.
 3. **Do not replace Shopify’s CSP wholesale** — merge Bildit directives so `cdn.shopify.com` / checkout stay intact.
 4. **Caching:** banner responses are fetched per request in the root loader; Oxygen/CDN page caching can still serve stale HTML. Prefer short cache or revalidate after schedule changes. The admin script URL in this example appends a cache-busting query when injected by the bridge.
-5. **Dev URL / port** in the VEE website settings must match your Hydrogen preview URL (`npm run dev`).
+5. **Dev URL / port** in the VXE website settings must match your Hydrogen preview URL (`npm run dev`).
 
 ## Integration examples
 
@@ -187,7 +205,7 @@ export async function loader(args) {
 }
 ```
 
-Uses `BILDIT_API_URL` + `BILDIT_API_KEY` from Oxygen/env. Location = request pathname; preview date comes from the VEE URL param.
+Uses `BILDIT_API_URL` + `BILDIT_API_KEY` from Oxygen/env. Location = request pathname; preview date comes from the VXE URL param.
 
 ### 2. SlotPlaceholder with fallback
 
@@ -233,7 +251,7 @@ http://localhost:3000/?bildit_preview_date=2026-02-15T00:00:00.000Z
 
 ```
 app/
-  entry.client.jsx          # React globals + CMS deps
+  entry.client.jsx          # React globals + VXE deps
   entry.server.jsx          # CSP + iframe embedding
   lib/cmsDependencies.js    # extra JS modules; omit host React (#525)
   root.jsx                  # getBannersForRequest + BilditRoot + Tailwind browser
@@ -258,7 +276,7 @@ Hydrogen banners must import **native modules only** — no `next/*`:
 | `@shopify/hydrogen` | `Image`, `Link`, `Money`, … |
 | Tailwind classes | CSS via `@tailwindcss/browser` or compiled banner styles — not a JS import |
 
-## VEE checklist
+## VXE checklist
 
 1. `ensureHostReactGlobals()` + `registerHostCmsDependencies()` in `entry.client.jsx` (no host React on `window.cmsDependencies`)
 2. `BilditRoot` wraps the app (includes `BilditAdminBridge`)
@@ -266,7 +284,7 @@ Hydrogen banners must import **native modules only** — no `next/*`:
 4. CSP: `bilditCspDirectives` + `allowBilditIframeEmbedding()` in `entry.server.jsx` (include `cdn.jsdelivr.net`)
 5. Hydrogen bundled admin script (CDN or `public/scripts/admin.js`) — not the Next.js download
 6. `BILDIT_API_KEY` / `BILDIT_API_URL` in `.env` locally and as **Oxygen** env vars in production
-7. Dev server URL/port matches the CMS preview URL
+7. Dev server URL/port matches the VXE preview URL
 
 ## Related
 

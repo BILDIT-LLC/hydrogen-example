@@ -12,7 +12,7 @@ import {
 export function BilditHomeSlots() {
   return (
     <section className="bildit-home-slots" style={{marginBottom: '2rem'}}>
-      {/* Inject CMS styles for this page into document head */}
+      {/* Inject VXE styles for this page into document head */}
       <StylePlaceholder slotId="home-styles" target="head" />
       <StylePlaceholder slotId="global-styles" target="head" />
 

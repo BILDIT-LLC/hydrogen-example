@@ -164,7 +164,7 @@ export function Layout({children}) {
         <link rel="stylesheet" href={tailwindStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
         {/*
-          Draft / Live Editor banners use Tailwind utility classes. The CMS
+          Draft / Live Editor banners use Tailwind utility classes. The VXE
           preview loads this same browser runtime; saved banners also get
           scanned CSS compiled in. Do not register tailwindcss as a cmsDependency.
         */}

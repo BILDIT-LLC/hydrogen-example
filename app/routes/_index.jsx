@@ -91,7 +91,7 @@ export default function Homepage() {
           <code>getBannersForRequest</code> from{' '}
           <code>@bildit-platform/hydrogen</code>. Use{' '}
           <code>SlotPlaceholder</code> with a <code>fallback</code>, and{' '}
-          <code>StylePlaceholder</code> for CMS-managed CSS.
+          <code>StylePlaceholder</code> for VXE-managed CSS.
         </p>
       </section>
 
