@@ -7,7 +7,7 @@ import {registerCmsDependencies} from '@bildit-platform/hydrogen/client';
  * Editor admin.js is React 19; that mismatch is minified React error #525.
  *
  * Tailwind is CSS, not a JS module. Load `@tailwindcss/browser` in root.jsx
- * (same runtime the CMS preview uses). Do not register `tailwindcss` here.
+ * (same runtime the VXE preview uses). Do not register `tailwindcss` here.
  */
 export const extraDependenciesConfig = {
   // 'date-fns': {module: DateFns},

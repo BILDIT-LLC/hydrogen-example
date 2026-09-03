@@ -21,4 +21,4 @@ You usually do **not** need a file here. Prefer the CDN unless you need an offli
 >
 ```
 
-Do **not** reuse the Next.js VEE download (`bildit-cms-script.min.js`) on Hydrogen — React identity mismatches will break Live Editor rendering.
+Do **not** reuse the Next.js VXE download (`bildit-cms-script.min.js`) on Hydrogen — React identity mismatches will break Live Editor rendering.
